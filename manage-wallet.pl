@@ -56,14 +56,18 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
     # copy from active wallet to repo
     print "copying from $ACTIVE_WALLET_LOCATION to ${BACKUP_GIT_REPO}/${current_alias}.dat\n";
     copy($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat")  or die "Copy failed: $!";
+    # run git add/commit
+    chdir($BACKUP_GIT_REPO);
+    `git add ${current_alias}.dat`;
+    `git commit ${current_alias}.dat -m 'Automatic wallet backup for ${current_alias}.'`;
 } elsif ($num_args == 2 && $ARGV[0] eq "activate") {
     my $desired_alias = $ARGV[1];
     print "activating wallet $ARGV[1] to $ACTIVE_WALLET_LOCATION\n";
     # TODO: verify desired alias exists in repo
-    # TODO: first, make sure that the current wallet is backed up (md5 sum of active and backup wallet match.)
+    # TODO: make sure that the current wallet is backed up (md5 sum of active and backup wallet match) before overwriting
     # copy wallet with desired alias to the active wallet location
     copy("${BACKUP_GIT_REPO}/${desired_alias}.dat", $ACTIVE_WALLET_LOCATION)  or die "Copy failed: $!";
-    # set file attribute with alias
+    # set file attribute with alias so we can recognize which wallet it is for other commands
     `xattr -w btc-wallet-alias '$desired_alias' '$ACTIVE_WALLET_LOCATION'`;
 } else {
     print $USAGE;
