@@ -1,4 +1,12 @@
 #!/usr/bin/perl -w
+#####################################################
+#
+# Copyright 2011 Greg Heartsfield <scsibug@imap.cc>
+# BSD-3 Licensed (see accompanying LICENSE file)
+#
+# Useful? tip 1KgeamVRTrU8DaBLRU2tv6VruwV9BRWDkm
+#####################################################
+
 use strict;
 use File::Copy;
 
