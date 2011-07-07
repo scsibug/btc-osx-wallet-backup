@@ -17,23 +17,31 @@ USAGE:
      (If the current wallet has changed, you will be prompted to save/commit it.)
 END
 
+# TODO: MAKE SURE THAT BITCOIN IS NOT RUNNING
+
 my $num_args = $#ARGV+1;
-if ($num_args == 1 && $ARGV[0] eq "backup") {
-    print "backing up current wallet from $ACTIVE_WALLET_LOCATION\n";
-    # find the alias for the current wallet
-    my $current_alias;
+my $current_alias;
+if ($num_args == 1 && $ARGV[0] eq "show") {
     $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
     chomp($current_alias);
     if ($? == 0) {
         # alias was found
+        print "Current wallet in use is \"$current_alias\"\n";
+    }
+    
+} elsif ($num_args == 1 && $ARGV[0] eq "backup") {
+    print "Backing up current wallet from $ACTIVE_WALLET_LOCATION\n";
+    # find the alias for the current wallet
+    $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
+    chomp($current_alias);
+    if ($? == 0) {
+        # alias was found
+        print "Current wallet in use is \"$current_alias\"\n";
         # don't do any work if the md5 hashes of both wallets match.
-        my $active_wallet_md5 = `md5 -q '$ACTIVE_WALLET_LOCATION'`;
-        my $backup_wallet_md5 = `md5 -q '${BACKUP_GIT_REPO}/${current_alias}.dat'`;
-        if ($active_wallet_md5 eq $backup_wallet_md5) {
+        my $wallets_match = &do_files_match($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat");
+        if ($wallets_match) {
             print "No change in wallet from backup, exiting.\n";
             exit(0);
-        } else {
-            print "$active_wallet_md5 != $backup_wallet_md5\n";
         }
     } else {
         print "\nIt looks like this wallet has not been backed up yet.  Please enter an alias for the wallet, and press enter\n";
@@ -47,11 +55,25 @@ if ($num_args == 1 && $ARGV[0] eq "backup") {
     print "Saving wallet with alias $current_alias\n";
     # copy from active wallet to repo
     print "copying from $ACTIVE_WALLET_LOCATION to ${BACKUP_GIT_REPO}/${current_alias}.dat\n";
-    my $ret = copy($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat")  or die "Copy failed: $!";
-
-    
-} elsif ($num_args == 2 && $ARGV[0] eq "restore") {
-    print "restoring wallet $ARGV[1]";
+    copy($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat")  or die "Copy failed: $!";
+} elsif ($num_args == 2 && $ARGV[0] eq "activate") {
+    my $desired_alias = $ARGV[1];
+    print "activating wallet $ARGV[1] to $ACTIVE_WALLET_LOCATION\n";
+    # TODO: verify desired alias exists in repo
+    # TODO: first, make sure that the current wallet is backed up (md5 sum of active and backup wallet match.)
+    # copy wallet with desired alias to the active wallet location
+    copy("${BACKUP_GIT_REPO}/${desired_alias}.dat", $ACTIVE_WALLET_LOCATION)  or die "Copy failed: $!";
+    # set file attribute with alias
+    `xattr -w btc-wallet-alias '$desired_alias' '$ACTIVE_WALLET_LOCATION'`;
 } else {
     print $USAGE;
+}
+
+# given two filenames, return 1 if files match (md5 hash), 0 otherwise.
+# TODO: what if file is not found?
+sub do_files_match($$) {
+    my($a, $b) = @_;
+    my $a_md5 = `md5 -q '$a'`;
+    my $b_md5 = `md5 -q '$b'`;
+    return ($a_md5 eq $b_md5);
 }
