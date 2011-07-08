@@ -19,14 +19,16 @@ my $BACKUP_GIT_REPO = "$HOME/Documents/BTC_repo";
 
 #####################################################
 
-my $USAGE = <<END;
+my $USAGE = <<'END';
 ==== Bitcoin Wallet Management ====
 USAGE:
+ Determine which wallet is currently active
+   $ manage-wallet.pl show
  Backing up a wallet to the repository:
-   manage-wallet.pl backup
+   $ manage-wallet.pl backup
      (If you have never backed up this wallet, you will be prompted for a name.)
  Activating a wallet for use with Bitcoin:
-   manage-wallet.pl activate wallet-name
+   $ manage-wallet.pl activate wallet-name
      (If the current wallet has changed, you will be prompted to save/commit it.)
 END
 
