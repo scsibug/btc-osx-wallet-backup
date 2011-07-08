@@ -26,13 +26,15 @@ USAGE:
      (If the current wallet has changed, you will be prompted to save/commit it.)
 END
 
-# TODO: MAKE SURE THAT BITCOIN IS NOT RUNNING
-
+# Make sure bitcoin client ins't running
 if (&is_bitcoin_running()) {
     print "Bitcoin must be shutdown before running this script.\n";
     exit(1);
 }
-
+# Make sure this OS supports xattr (OS X only?)
+if (!&is_xattr_available()) {
+    print "This script requires the xattr command be available.\n";
+}
 my $num_args = $#ARGV+1;
 my $current_alias;
 if ($num_args == 1 && $ARGV[0] eq "show") {
@@ -109,4 +111,14 @@ sub do_files_match($$) {
 # If bitcoin is running, return true.
 sub is_bitcoin_running() {
     return (-e $BITCOIN_DATA_DIR.'.lock');
+}
+
+# Check platform... if we don't have xattr available
+sub is_xattr_available() {
+    `which -s xattr`;
+    if ($?) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
