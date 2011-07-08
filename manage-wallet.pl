@@ -9,11 +9,15 @@
 
 use strict;
 use File::Copy;
+use Env qw(HOME);
 
-my $BITCOIN_DATA_DIR = '/Users/scsibug/Library/Application Support/Bitcoin/';
+# Where is your bitcoin data directory?
+my $BITCOIN_DATA_DIR = "$HOME/Library/Application Support/Bitcoin/";
 my $ACTIVE_WALLET_LOCATION = $BITCOIN_DATA_DIR.'wallet.dat';
 # this should be an init'd git repo.
-my $BACKUP_GIT_REPO = "/Users/scsibug/testing_repo";
+my $BACKUP_GIT_REPO = "$HOME/Documents/BTC_repo";
+
+#####################################################
 
 my $USAGE = <<END;
 ==== Bitcoin Wallet Management ====
