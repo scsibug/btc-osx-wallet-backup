@@ -10,7 +10,8 @@
 use strict;
 use File::Copy;
 
-my $ACTIVE_WALLET_LOCATION = '/Users/scsibug/Library/Application Support/Bitcoin/wallet.dat';
+my $BITCOIN_DATA_DIR = '/Users/scsibug/Library/Application Support/Bitcoin/';
+my $ACTIVE_WALLET_LOCATION = $BITCOIN_DATA_DIR.'wallet.dat';
 # this should be an init'd git repo.
 my $BACKUP_GIT_REPO = "/Users/scsibug/testing_repo";
 
@@ -26,6 +27,11 @@ USAGE:
 END
 
 # TODO: MAKE SURE THAT BITCOIN IS NOT RUNNING
+
+if (&is_bitcoin_running()) {
+    print "Bitcoin must be shutdown before running this script.\n";
+    exit(1);
+}
 
 my $num_args = $#ARGV+1;
 my $current_alias;
@@ -93,10 +99,14 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
 }
 
 # given two filenames, return 1 if files match (md5 hash), 0 otherwise.
-# TODO: what if file is not found?
 sub do_files_match($$) {
     my($a, $b) = @_;
     my $a_md5 = `md5 -q '$a'`;
     my $b_md5 = `md5 -q '$b'`;
     return ($a_md5 eq $b_md5);
+}
+
+# If bitcoin is running, return true.
+sub is_bitcoin_running() {
+    return (-e $BITCOIN_DATA_DIR.'.lock');
 }
