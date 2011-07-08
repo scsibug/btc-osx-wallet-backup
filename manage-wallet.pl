@@ -67,13 +67,14 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
     print $USAGE;
 }
 
+
+#####################################################
+# Subroutines
+
+
 sub cmd_show() {
-    $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
-    chomp($current_alias);
-    if ($? == 0) {
-        # alias was found
-        print "Current wallet in use is \"$current_alias\".\n";
-    }
+    my $current_alias = &current_wallet();
+    print "Current wallet is \"$current_alias\".\n";
     if (-e "${BACKUP_GIT_REPO}/${current_alias}.dat") {
         my $wallets_match = &do_files_match($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat");
         if ($wallets_match) {
@@ -82,13 +83,9 @@ sub cmd_show() {
             print "\tActive wallet has outstanding changes NOT in backup.\n";
         }
     } else {
-        print "Error: alias \"${current_alias}\" does not exist in the backup repository.\n";
-        exit(1);
+        die "Error: alias \"${current_alias}\" does not exist in the backup repository.\n";
     }
 }
-
-#####################################################
-# Subroutines
 
 sub cmd_backup() {
     print "Backing up current wallet from $ACTIVE_WALLET_LOCATION\n";
@@ -161,4 +158,14 @@ sub is_xattr_available() {
     } else {
         return 1;
     }
+}
+
+# Return the name of the currently active wallet
+sub current_wallet() {
+    my $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
+    if ($?) {
+        die "Could not get currently active wallet name.";
+    }
+    chomp($current_alias);
+    return $current_alias;
 }
