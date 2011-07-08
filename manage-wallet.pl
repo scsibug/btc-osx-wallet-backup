@@ -120,8 +120,8 @@ sub cmd_backup() {
         $current_alias = <STDIN>;
         chomp($current_alias);
         # save alias as an attribute on the wallet
-        `xattr -w btc-wallet-alias $current_alias $ACTIVE_WALLET_LOCATION`;
-    } 
+        `xattr -w btc-wallet-alias $current_alias '$ACTIVE_WALLET_LOCATION'`;
+    }
     print "Saving wallet with alias \"$current_alias\"\n";
     # copy from active wallet to repo
     print "copying from $ACTIVE_WALLET_LOCATION to ${BACKUP_GIT_REPO}/${current_alias}.dat\n";
@@ -129,7 +129,7 @@ sub cmd_backup() {
     # run git add/commit
     chdir($BACKUP_GIT_REPO);
     `git add ${current_alias}.dat`;
-    `git commit ${current_alias}.dat -m 'Automatic wallet backup for ${current_alias}.'`;
+    print `git commit ${current_alias}.dat -m 'Automatic wallet backup for ${current_alias}.'`;
 }
 
 sub cmd_activate($) {
