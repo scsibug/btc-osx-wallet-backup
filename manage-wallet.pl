@@ -79,26 +79,36 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
 
 
 sub cmd_show() {
-    my $current_alias = &current_wallet();
-    print "Current wallet is \"$current_alias\".\n";
+    my $current_alias;
+    eval {
+        $current_alias = &current_wallet();
+    };
+    if ($@) {
+        print "The current wallet did not originate in the backup repository.";
+        return;
+    }
+    print "Current wallet: $current_alias.\n";
     if (-e "${BACKUP_GIT_REPO}/${current_alias}.dat") {
         my $wallets_match = &do_files_match($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat");
         if ($wallets_match) {
-            print "\tNo differences between active and backup wallets.\n";
+            print "\tNo difference between active and backup wallet.\n";
         } else {
             print "\tActive wallet has outstanding changes NOT in backup.\n";
         }
     } else {
         die "Error: alias \"${current_alias}\" does not exist in the backup repository.\n";
     }
+    print "All wallet aliases:\n";
+    print "\t".join(", ", &all_wallets())."\n";
 }
 
 sub cmd_backup() {
     print "Backing up current wallet from $ACTIVE_WALLET_LOCATION\n";
-    # find the alias for the current wallet
-    $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
-    chomp($current_alias);
-    if ($? == 0) {
+    my $current_alias;
+    eval {
+        $current_alias = &current_wallet();
+    };
+    if (!$@) {
         # don't do any work if the md5 hashes of both wallets match.
         my $wallets_match = &do_files_match($ACTIVE_WALLET_LOCATION, "${BACKUP_GIT_REPO}/${current_alias}.dat");
         if ($wallets_match) {
@@ -183,4 +193,15 @@ sub current_wallet() {
     }
     chomp($current_alias);
     return $current_alias;
+}
+
+sub all_wallets() {
+     my @wallet_paths = <$BACKUP_GIT_REPO/*.dat>;
+     my @wallet_aliases = ();
+     foreach my $alias (@wallet_paths) {
+         $alias =~ s/.*\///; #strip off all but filename
+         $alias =~ s/\.dat//; #strip extension
+         push(@wallet_aliases,$alias);
+     }
+     return @wallet_aliases;
 }
