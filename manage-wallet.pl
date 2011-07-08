@@ -47,12 +47,18 @@ USAGE:
      (This backs up the existing wallet, and then deletes the original.)
 END
 
+### Some preliminary checks...
 # Make sure bitcoin client ins't running
 &get_wallet_lock() or die  "Bitcoin must be shutdown before running this script.\n";
 
 # Make sure this OS supports xattr (OS X only?)
 if (!&is_xattr_available()) {
-    print "This script requires the xattr command be available.\n";
+    die "This script requires the xattr command be available.\n";
+}
+
+# Verify backup directory is a valid git repo
+if (!&is_git_repo($BACKUP_GIT_REPO)) {
+    die "$BACKUP_GIT_REPO is not a git repository.";
 }
 
 my $num_args = $#ARGV+1;
@@ -157,6 +163,15 @@ sub is_xattr_available() {
         return 0;
     } else {
         return 1;
+    }
+}
+
+sub is_git_repo($) {
+    my ($gitrepo) = @_;
+    if (-e "${gitrepo}/.git") {
+        return 1;
+    } else {
+        return 0;
     }
 }
 
