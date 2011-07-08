@@ -5,6 +5,14 @@
 # BSD-3 Licensed (see accompanying LICENSE file)
 #
 # Useful? tip 1KgeamVRTrU8DaBLRU2tv6VruwV9BRWDkm
+#
+# Instructions:
+#  Create a git repo, and reference it below in
+#  $BACKUP_GIT_REPO.  Run this program to see
+#  usage information.  Generally, the first thing
+#  you'll want to do is run the 'backup' command to
+#  save a wallet in the git repo.
+#
 #####################################################
 
 use strict;
@@ -30,6 +38,9 @@ USAGE:
  Activating a wallet for use with Bitcoin:
    $ manage-wallet.pl activate wallet-name
      (If the current wallet has changed, you will be prompted to save/commit it.)
+ Creating a new wallet (UNIMPLEMENTED):
+   $ manage-wallet.pl create
+     (This backs up the existing wallet, and then deletes the original.)
 END
 
 # Make sure bitcoin client ins't running
