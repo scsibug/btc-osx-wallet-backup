@@ -102,6 +102,9 @@ sub cmd_show() {
     print "\t".join(", ", &all_wallets())."\n";
 }
 
+# TODO (thanks #bitcoin): We could backup with the json cmd
+# "backupwallet" if the Bitcoin client has the server enabled. Or,
+# look into bitcoind's 'safe copy' feature...
 sub cmd_backup() {
     print "Backing up current wallet from $ACTIVE_WALLET_LOCATION\n";
     my $current_alias;
@@ -137,7 +140,7 @@ sub cmd_activate($) {
     print "activating wallet $desired_alias to $ACTIVE_WALLET_LOCATION\n";
     # TODO: verify desired alias exists in repo
     if (-e "${BACKUP_GIT_REPO}/${desired_alias}.dat") {
-        # TODO: make sure that the current wallet is backed up (md5 sum of active and backup wallet match) before overwriting
+        # TODO: make sure that the current wallet is backed up before overwriting!
         # copy wallet with desired alias to the active wallet location
         copy("${BACKUP_GIT_REPO}/${desired_alias}.dat", $ACTIVE_WALLET_LOCATION)  or die "Copy failed: $!";
         # set file attribute with alias so we can recognize which wallet it is for other commands
