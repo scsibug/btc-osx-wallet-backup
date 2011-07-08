@@ -14,11 +14,13 @@
 #  save a wallet in the git repo.
 #
 #####################################################
-
 use strict;
 use File::Copy;
 use Fcntl qw(:flock);
 use Env qw(HOME);
+
+#####################################################
+# User-modifiable environment data
 
 # Where is your bitcoin data directory?
 my $BITCOIN_DATA_DIR = "$HOME/Library/Application Support/Bitcoin/";
@@ -27,6 +29,7 @@ my $ACTIVE_WALLET_LOCATION = $BITCOIN_DATA_DIR.'wallet.dat';
 my $BACKUP_GIT_REPO = "$HOME/Documents/BTC_repo";
 
 #####################################################
+# Main program
 
 my $USAGE = <<'END';
 ==== Bitcoin Wallet Management ====
@@ -46,13 +49,25 @@ END
 
 # Make sure bitcoin client ins't running
 &get_wallet_lock() or die  "Bitcoin must be shutdown before running this script.\n";
+
 # Make sure this OS supports xattr (OS X only?)
 if (!&is_xattr_available()) {
     print "This script requires the xattr command be available.\n";
 }
+
 my $num_args = $#ARGV+1;
 my $current_alias;
 if ($num_args == 1 && $ARGV[0] eq "show") {
+    &cmd_show();
+} elsif ($num_args == 1 && $ARGV[0] eq "backup") {
+    &cmd_backup();
+} elsif ($num_args == 2 && $ARGV[0] eq "activate") {
+    &cmd_activate($ARGV[1]);
+} else {
+    print $USAGE;
+}
+
+sub cmd_show() {
     $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
     chomp($current_alias);
     if ($? == 0) {
@@ -70,7 +85,12 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
         print "Error: alias \"${current_alias}\" does not exist in the backup repository.\n";
         exit(1);
     }
-} elsif ($num_args == 1 && $ARGV[0] eq "backup") {
+}
+
+#####################################################
+# Subroutines
+
+sub cmd_backup() {
     print "Backing up current wallet from $ACTIVE_WALLET_LOCATION\n";
     # find the alias for the current wallet
     $current_alias = `xattr -p btc-wallet-alias '$ACTIVE_WALLET_LOCATION'`;
@@ -97,9 +117,11 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
     chdir($BACKUP_GIT_REPO);
     `git add ${current_alias}.dat`;
     `git commit ${current_alias}.dat -m 'Automatic wallet backup for ${current_alias}.'`;
-} elsif ($num_args == 2 && $ARGV[0] eq "activate") {
-    my $desired_alias = $ARGV[1];
-    print "activating wallet $ARGV[1] to $ACTIVE_WALLET_LOCATION\n";
+}
+
+sub cmd_activate($) {
+    my($desired_alias) = @_;
+    print "activating wallet $desired_alias to $ACTIVE_WALLET_LOCATION\n";
     # TODO: verify desired alias exists in repo
     if (-e "${BACKUP_GIT_REPO}/${desired_alias}.dat") {
         # TODO: make sure that the current wallet is backed up (md5 sum of active and backup wallet match) before overwriting
@@ -111,8 +133,6 @@ if ($num_args == 1 && $ARGV[0] eq "show") {
         print "Alias \"${desired_alias}\" does not exist in the backup repository.\n";
         exit(1);
     }
-} else {
-    print $USAGE;
 }
 
 # given two filenames, return 1 if files match (md5 hash), 0 otherwise.
@@ -123,7 +143,7 @@ sub do_files_match($$) {
     return ($a_md5 eq $b_md5);
 }
 
-# If we got a lock on the bitcoin data dir, return true
+# If we got a lock on the bitcoin data dir, return true.
 # we hold onto this for the duration of the program.
 sub get_wallet_lock() {
     my $lockfile = $BITCOIN_DATA_DIR.'.lock';
