@@ -17,6 +17,7 @@
 
 use strict;
 use File::Copy;
+use Fcntl qw(:flock);
 use Env qw(HOME);
 
 # Where is your bitcoin data directory?
@@ -44,10 +45,7 @@ USAGE:
 END
 
 # Make sure bitcoin client ins't running
-if (&is_bitcoin_running()) {
-    print "Bitcoin must be shutdown before running this script.\n";
-    exit(1);
-}
+&get_wallet_lock() or die  "Bitcoin must be shutdown before running this script.\n";
 # Make sure this OS supports xattr (OS X only?)
 if (!&is_xattr_available()) {
     print "This script requires the xattr command be available.\n";
@@ -125,9 +123,14 @@ sub do_files_match($$) {
     return ($a_md5 eq $b_md5);
 }
 
-# If bitcoin is running, return true.
-sub is_bitcoin_running() {
-    return (-e $BITCOIN_DATA_DIR.'.lock');
+# If we got a lock on the bitcoin data dir, return true
+# we hold onto this for the duration of the program.
+sub get_wallet_lock() {
+    my $lockfile = $BITCOIN_DATA_DIR.'.lock';
+    open(LOCKFILE, ">>", $lockfile)
+        or return 0;
+    flock(LOCKFILE, LOCK_NB|LOCK_EX) or return 0;
+    return 1;
 }
 
 # Check platform... if we don't have xattr available
